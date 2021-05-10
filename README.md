@@ -14,10 +14,10 @@ cd /tmp
 wget https://raw.githubusercontent.com/rangareddy/thread-dumps-collector/main/thread_dumps_collector.sh
 chmod +x thread_dumps_collector.sh
 ```
-**Step2:** While Runing the **thread_dumps_collector.sh** script, provide the **container_id**.
+**Step2:** While Runing the **thread_dumps_collector.sh** script, provide the **container_id/process_id**.
 ```sh
-sh thread_dumps_collector.sh <container_id>
+sh thread_dumps_collector.sh <container_id/process_id>
 ```
-> Replace **container_id** with your **Yarn Container Id**.
+> Replace **container_id/process_id** with your **Yarn_Container_Id/Process_Id**.
 
 Thanks for using this tool. Please let me know is there any feedback. 
