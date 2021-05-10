@@ -40,59 +40,72 @@ fi
 
 PROCESS_OWNER_USER=`echo $container_result | awk '{print $1}'`
 PID=`echo $container_result | awk '{print $2}'`
-echo "PROCESS_OWNER_USER $PROCESS_OWNER_USER"
-echo "PID $PID"
+
+echo "OWNER_USER    :   $PROCESS_OWNER_USER"
+echo "PID           :   $PID"
 
 JAVA_HOME_TMP="`realpath /usr/java/jdk*`"
-
 JAVA_HOME=${JAVA_HOME:-"${JAVA_HOME_TMP}"}
 
-SLEEP_INTERVAL=${SLEEP_INTERVAL:-10}
-NUM_THREAD_DUMPS=${NUM_THREAD_DUMPS:-10}
+SLEEP_INTERVAL=${SLEEP_INTERVAL:-5}         # defaults to 5 seconds
+NUM_OF_THREAD_DUMPS=${NUM_THREAD_DUMPS:-10}    # defaults to 10 times
 
 THREAD_DUMP_DIR=/tmp/${PID}
 
+# create thread dump output directory
 mkdir -p ${THREAD_DUMP_DIR}
 
 IS_JAVA_HOME_EXISTS=false
 if [ -d "${JAVA_HOME}" ]; then
-     IS_JAVA_HOME_EXISTS=true
-     echo "JAVA_HOME $JAVA_HOME"
+    IS_JAVA_HOME_EXISTS=true
+    echo "JAVA_HOME $JAVA_HOME"
 fi
 
-for i in {1..10};
-do
-    current_time=$(date "+%Y_%m_%d_%H_%M_%S_%N")
-    OUTPUT_PATH=${THREAD_DUMP_DIR}/Container_Jstacks_${PID}_${current_time}.txt;
+if [ ps -p $PID > /dev/null]; then
+    THREAD_COUNT=0
+    while [ $THREAD_COUNT -lt $NUM_OF_THREAD_DUMPS ]
+    do
+        CURRENT_TIME=$(date "+%Y_%m_%d_%H_%M_%S_%N")
+        OUTPUT_PATH=${THREAD_DUMP_DIR}/Container_Jstacks_${PID}_${CURRENT_TIME}.txt;
+        
+        if [ ! IS_JAVA_HOME_EXISTS ]; then
+            # Generate thread dump via kill -3
+            kill -3 ${PID} >> ${OUTPUT_PATH}
+        else
+             # Generate thread dump via jstack
+             sudo -u ${PROCESS_OWNER_USER} ${JAVA_HOME}/bin/jstack ${PID} >> ${OUTPUT_PATH}
+        fi
+        
+        # increment the value
+        THREAD_COUNT=`expr $THREAD_COUNT + 1`
+        
+        echo "Thread dump $THREAD_COUNT collected at ${CURRENT_TIME}"
+        sleep $SLEEP_INTERVAL; 
+    done
 
-    if [ ! IS_JAVA_HOME_EXISTS ]; then
-        # Generate thread dump via kill -3
-        kill -3 ${PID} >> ${OUTPUT_PATH}
-    else
-         # Generate thread dump via jstack
-         sudo -u ${PROCESS_OWNER_USER} ${JAVA_HOME}/bin/jstack ${PID} >> ${OUTPUT_PATH}
+    # Compressing the extracted Spark logs using tar/zip compression
+    EXTRACTED_FILE=""
+
+    if [ ! -z "$(ls -A ${THREAD_DUMP_DIR})" ]; then
+        if [ -x "$(command -v tar)" ]; then
+            cd $THREAD_DUMP_DIR
+            EXTRACTED_FILE=${PID}.tgz
+            tar cvfz ${EXTRACTED_FILE} * > /dev/null 2>&1
+        elif [ -x "$(command -v zip)" ]; then
+            cd $THREAD_DUMP_DIR
+            EXTRACTED_FILE=${PID}.zip
+            zip -q -r ${EXTRACTED_FILE} *
+        else
+            echo "Compression formats [tar|zip] are not installed."
+        fi
     fi
-    sleep $SLEEP_INTERVAL;
-done
-
-# Compressing the extracted Spark logs using tar/zip compression
-EXTRACTED_FILE=""
-
-if [ ! -z "$(ls -A ${THREAD_DUMP_DIR})" ]; then
-    if [ -x "$(command -v tar)" ]; then
-        cd $THREAD_DUMP_DIR
-        EXTRACTED_FILE=${PID}.tgz
-        tar cvfz ${EXTRACTED_FILE} * > /dev/null 2>&1
-    elif [ -x "$(command -v zip)" ]; then
-        cd $THREAD_DUMP_DIR
-        EXTRACTED_FILE=${PID}.zip
-        zip -q -r ${EXTRACTED_FILE} *
-    else
-        echo "Compression formats [tar|zip] are not installed."
-    fi
+else 
+    echo ""
+    echo "PID ${PID} does not exist."
+    echo ""
 fi
 
-echo "Thread Dumps <${EXTRACTED_FILE}> extracted successfully"
+echo "Thread Dumps collected successfully to <${EXTRACTED_FILE}> location."
 
 echo ""
 echo "Script <$SCRIPT> executed successfully"
