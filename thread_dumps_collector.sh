@@ -10,7 +10,7 @@
 #                                                             | |                                                   #
 #                                                             |_|                                                   #
 #                                                                                                                   #
-#  Usage   : thread_dumps_collector.sh <container_id>                                                               #
+#  Usage   : thread_dumps_collector.sh <container_id/process_id>                                                               #
 #  Author  : Ranga Reddy                                                                                            #
 #  Version : v1.0                                                                                                   #
 #  Date    : 05-May-2021                                                                                            #
@@ -23,7 +23,7 @@ echo "Running the <$SCRIPT> script"
 echo ""
 
 if [ $# -lt 1 ]; then
-    echo "Usage   : $SCRIPT <YARN_Container_ID>"
+    echo "Usage   : $SCRIPT <YARN_Container_ID/Process_Id>"
     echo "Example : $SCRIPT container_e08_1618853899304_0014_01_000002"
     exit 1
 fi
@@ -34,12 +34,18 @@ container_result=`ps -ef |grep $CONTAINER_ID |grep -v -e bash -e container-execu
 application_result=`grep application_ <<< "$container_result"`
 
 if [ -z "$application_result" ]; then
-    echo "Application details is not found for container <$CONTAINER_ID> in host <`hostname`>."
+    echo "Application details is not found for container/process id <$CONTAINER_ID> in host <`hostname`>."
     exit 1;
 fi
 
 PROCESS_OWNER_USER=`echo $container_result | awk '{print $1}'`
 PID=`echo $container_result | awk '{print $2}'`
+
+#CURRENT_USER=$(whoami)
+#if [ ! $CURRENT_USER == $PROCESS_OWNER_USER ]; then
+#    echo "Run <$SCRIPT> with ${PROCESS_OWNER_USER} user"
+#    exit 1;
+#fi
 
 echo "OWNER_USER    :   $PROCESS_OWNER_USER"
 echo "PID           :   $PID"
@@ -63,6 +69,7 @@ fi
 
 if ps -p $PID > /dev/null
 then
+    echo ""
     THREAD_COUNT=0
     while [ $THREAD_COUNT -lt $NUM_OF_THREAD_DUMPS ]
     do
