@@ -50,22 +50,23 @@ PID=`echo $container_result | awk '{print $2}'`
 echo "OWNER_USER    :   $PROCESS_OWNER_USER"
 echo "PID           :   $PID"
 
-JAVA_HOME_TMP="`realpath /usr/java/jdk*`"
+PS_JAVA_HOME=`ps -ef | grep java | awk 'NR==1{print $8;}'`
+JAVA_HOME_TMP=$(sed -e "s/bin\/java//g" <<< ${PS_JAVA_HOME})
 JAVA_HOME=${JAVA_HOME:-"${JAVA_HOME_TMP}"}
-
-SLEEP_INTERVAL=${SLEEP_INTERVAL:-5}         # defaults to 5 seconds
-NUM_OF_THREAD_DUMPS=${NUM_THREAD_DUMPS:-10}    # defaults to 10 times
-
-THREAD_DUMP_DIR=/tmp/${PID}
-
-# create thread dump output directory
-mkdir -p ${THREAD_DUMP_DIR}
 
 IS_JAVA_HOME_EXISTS=false
 if [ -d "${JAVA_HOME}" ]; then
     IS_JAVA_HOME_EXISTS=true
     echo "JAVA_HOME     :   $JAVA_HOME"
 fi
+
+SLEEP_INTERVAL=${SLEEP_INTERVAL:-5}            # defaults to 5 seconds
+NUM_OF_THREAD_DUMPS=${NUM_THREAD_DUMPS:-10}    # defaults to 10 times
+
+THREAD_DUMP_DIR=/tmp/${PID}
+
+# create thread dump output directory
+mkdir -p ${THREAD_DUMP_DIR}
 
 if ps -p $PID > /dev/null
 then
