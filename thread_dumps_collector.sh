@@ -58,16 +58,17 @@ mkdir -p ${THREAD_DUMP_DIR}
 IS_JAVA_HOME_EXISTS=false
 if [ -d "${JAVA_HOME}" ]; then
     IS_JAVA_HOME_EXISTS=true
-    echo "JAVA_HOME $JAVA_HOME"
+    echo "JAVA_HOME     :   $JAVA_HOME"
 fi
 
-if [ ps -p $PID > /dev/null]; then
+if ps -p $PID > /dev/null
+then
     THREAD_COUNT=0
     while [ $THREAD_COUNT -lt $NUM_OF_THREAD_DUMPS ]
     do
         CURRENT_TIME=$(date "+%Y_%m_%d_%H_%M_%S_%N")
         OUTPUT_PATH=${THREAD_DUMP_DIR}/Container_Jstacks_${PID}_${CURRENT_TIME}.txt;
-        
+
         if [ ! IS_JAVA_HOME_EXISTS ]; then
             # Generate thread dump via kill -3
             kill -3 ${PID} >> ${OUTPUT_PATH}
@@ -75,12 +76,12 @@ if [ ps -p $PID > /dev/null]; then
              # Generate thread dump via jstack
              sudo -u ${PROCESS_OWNER_USER} ${JAVA_HOME}/bin/jstack ${PID} >> ${OUTPUT_PATH}
         fi
-        
+
         # increment the value
         THREAD_COUNT=`expr $THREAD_COUNT + 1`
-        
+
         echo "Thread dump $THREAD_COUNT collected at ${CURRENT_TIME}"
-        sleep $SLEEP_INTERVAL; 
+        sleep $SLEEP_INTERVAL;
     done
 
     # Compressing the extracted Spark logs using tar/zip compression
@@ -99,14 +100,14 @@ if [ ps -p $PID > /dev/null]; then
             echo "Compression formats [tar|zip] are not installed."
         fi
     fi
-else 
+else
     echo ""
     echo "PID ${PID} does not exist."
     echo ""
 fi
 
-echo "Thread Dumps collected successfully to <${EXTRACTED_FILE}> location."
-
+echo ""
+echo "Thread Dumps collected successfully to <${THREAD_DUMP_DIR}/${EXTRACTED_FILE}> location."
 echo ""
 echo "Script <$SCRIPT> executed successfully"
 echo ""
