@@ -10,7 +10,7 @@
 #                                                             | |                                                   #
 #                                                             |_|                                                   #
 #                                                                                                                   #
-#  Usage   : thread_dumps_collector.sh <container_id/process_id>                                                               #
+#  Usage   : thread_dumps_collector.sh <container_id/process_id>                                                    #
 #  Author  : Ranga Reddy                                                                                            #
 #  Version : v1.0                                                                                                   #
 #  Date    : 05-May-2021                                                                                            #
@@ -25,6 +25,7 @@ echo ""
 if [ $# -lt 1 ]; then
     echo "Usage   : $SCRIPT <YARN_Container_ID/Process_Id>"
     echo "Example : $SCRIPT container_e08_1618853899304_0014_01_000002"
+    echo " "
     exit 1
 fi
 
