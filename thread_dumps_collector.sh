@@ -83,7 +83,7 @@ then
             kill -3 ${PID} >> ${OUTPUT_PATH}
         else
              # Generate thread dump via jstack
-             sudo -u ${PROCESS_OWNER_USER} ${JAVA_HOME}/bin/jstack ${PID} >> ${OUTPUT_PATH}
+             ${JAVA_HOME}/bin/jstack -l ${PID} >> ${OUTPUT_PATH}
         fi
 
         # increment the value
